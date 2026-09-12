@@ -5,9 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class TvmazeMiddlewareApplication {
-
-	public static void main(String[] args) {
-		SpringApplication.run(TvmazeMiddlewareApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(TvmazeMiddlewareApplication.class, args);
+    }
 }
