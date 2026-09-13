@@ -1,1 +1,7 @@
+### Buscar shows por un criterio (Inciso A)
 GET http://localhost:8080/api/shows/search?search_query=girls
+
+### 
+
+### Obtener un show específico por ID con caché (Inciso B)
+GET http://localhost:8080/api/shows/250

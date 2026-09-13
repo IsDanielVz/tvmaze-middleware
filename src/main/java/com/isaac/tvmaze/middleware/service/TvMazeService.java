@@ -1,12 +1,15 @@
 package com.isaac.tvmaze.middleware.service;
 
 import com.isaac.tvmaze.middleware.model.dto.ShowSearchResponse;
+import com.isaac.tvmaze.middleware.model.entity.CachedShow;
+import com.isaac.tvmaze.middleware.repository.CachedShowRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class TvMazeService {
@@ -14,19 +17,19 @@ public class TvMazeService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private CachedShowRepository cachedShowRepository;
+
     public List<ShowSearchResponse> searchShows(String query) {
         List<ShowSearchResponse> resultList = new ArrayList<>();
-        
         try {
             String finalUrl = "https://api.tvmaze.com/search/shows?q=" + query;
-            
             List<Map<String, Object>> response = restTemplate.getForObject(finalUrl, List.class);
 
             if (response != null) {
                 for (Map<String, Object> item : response) {
                     Map<String, Object> show = (Map<String, Object>) item.get("show");
                     if (show != null) {
-                        
                         Long id = null;
                         if (show.get("id") != null) {
                             id = Long.valueOf(show.get("id").toString());
@@ -60,7 +63,35 @@ public class TvMazeService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
         return resultList;
+    }
+    
+    public Map<String, Object> getShowById(Long showId) {
+        Optional<CachedShow> dbResult = cachedShowRepository.findById(showId);
+        if (dbResult.isPresent()) {
+            System.out.println("--- Retornando Show ID: " + showId + " desde CACHÉ (MongoDB Atlas) ---");
+            return dbResult.get().getShowData();
+        }
+
+        try {
+            System.out.println("--- Consumiendo API externa de TV Maze para ID: " + showId + " ---");
+            String url = "https://api.tvmaze.com/shows/" + showId; 
+            
+            Map<String, Object> externalShow = restTemplate.getForObject(url, Map.class);
+
+            if (externalShow != null) {
+                CachedShow showToCache = CachedShow.builder()
+                        .id(showId)
+                        .showData(externalShow)
+                        .build();
+                
+                cachedShowRepository.save(showToCache);
+                return externalShow;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }
