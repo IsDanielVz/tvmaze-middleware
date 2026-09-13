@@ -2,7 +2,9 @@ package com.isaac.tvmaze.middleware.service;
 
 import com.isaac.tvmaze.middleware.model.dto.ShowSearchResponse;
 import com.isaac.tvmaze.middleware.model.entity.CachedShow;
+import com.isaac.tvmaze.middleware.model.entity.ShowComment;
 import com.isaac.tvmaze.middleware.repository.CachedShowRepository;
+import com.isaac.tvmaze.middleware.repository.ShowCommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -19,6 +21,9 @@ public class TvMazeService {
 
     @Autowired
     private CachedShowRepository cachedShowRepository;
+
+    @Autowired
+    private ShowCommentRepository showCommentRepository;
 
     public List<ShowSearchResponse> searchShows(String query) {
         List<ShowSearchResponse> resultList = new ArrayList<>();
@@ -93,5 +98,19 @@ public class TvMazeService {
         }
 
         return null;
+    }
+
+    public ShowComment addComment(Long showId, String commentText, Integer rating) {
+        if (rating == null || rating < 0 || rating > 5) {
+            throw new IllegalArgumentException("La calificación debe ser un número entero entre 0 y 5.");
+        }
+
+        ShowComment newComment = ShowComment.builder()
+            .showId(showId)
+            .comment(commentText != null ? commentText : "")
+            .rating(rating)
+            .build();
+
+        return showCommentRepository.save(newComment);
     }
 }
