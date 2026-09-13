@@ -4,3 +4,9 @@ GET http://localhost:8080/api/shows/search?search_query=girls
 GET http://localhost:8080/api/shows/300
 ### Crear un comentario y calificación (Punto C)
 POST http://localhost:8080/api/shows/comment?show_id=300&comment=Excelente serie con buena trama&rating=5
+### Kirby Buckets
+POST http://localhost:8080/api/shows/comment?show_id=250&comment=Excelente serie de animacion y live action&rating=5
+###
+GET http://localhost:8080/api/shows/search?search_query=kirby
+###
+GET http://localhost:8080/api/shows/250

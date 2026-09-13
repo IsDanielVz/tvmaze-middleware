@@ -91,31 +91,49 @@ public class TvMazeService {
     }
 
     public Map<String, Object> getShowById(Long showId) {
+        Map<String, Object> showDataResult = null;
+
         Optional<CachedShow> dbResult = cachedShowRepository.findById(showId);
         if (dbResult.isPresent()) {
             System.out.println("--- Retornando Show ID: " + showId + " desde CACHÉ (MongoDB Atlas) ---");
-            return dbResult.get().getShowData();
-        }
-
-        try {
-            System.out.println("--- Consumiendo API externa de TV Maze para ID: " + showId + " ---");
-            String url = baseUrl + "/shows/" + showId; 
-            
-            Map<String, Object> externalShow = restTemplate.getForObject(url, Map.class);
-
-            if (externalShow != null) {
-                CachedShow showToCache = CachedShow.builder()
-                        .id(showId)
-                        .showData(externalShow)
-                        .build();
+            showDataResult = new java.util.HashMap<>(dbResult.get().getShowData());
+        } else {
+            try {
+                System.out.println("--- Consumiendo API externa de TV Maze para ID: " + showId + " ---");
+                String url = baseUrl + "/shows/" + showId; 
                 
-                cachedShowRepository.save(showToCache);
-                return externalShow;
+                Map<String, Object> externalShow = restTemplate.getForObject(url, Map.class);
+
+                if (externalShow != null) {
+                    CachedShow showToCache = CachedShow.builder()
+                            .id(showId)
+                            .showData(externalShow)
+                            .build();
+                    cachedShowRepository.save(showToCache);
+                    
+                    showDataResult = new java.util.HashMap<>(externalShow);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return null;
+
+        if (showDataResult != null) {
+            List<ShowComment> dbComments = showCommentRepository.findByShowId(showId);
+            
+            List<Map<String, Object>> commentsList = dbComments.stream()
+                    .map(c -> {
+                        Map<String, Object> map = new java.util.HashMap<>();
+                        map.put("comment", c.getComment());
+                        map.put("rating", c.getRating());
+                        return map;
+                    })
+                    .collect(Collectors.toList());
+
+            showDataResult.put("comments", commentsList);
+        }
+
+        return showDataResult;
     }
 
     public ShowComment addComment(Long showId, String commentText, Integer rating) {
