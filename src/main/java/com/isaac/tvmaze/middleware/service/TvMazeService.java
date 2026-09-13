@@ -6,6 +6,7 @@ import com.isaac.tvmaze.middleware.model.entity.ShowComment;
 import com.isaac.tvmaze.middleware.repository.CachedShowRepository;
 import com.isaac.tvmaze.middleware.repository.ShowCommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
@@ -25,10 +26,16 @@ public class TvMazeService {
     @Autowired
     private ShowCommentRepository showCommentRepository;
 
+    @Value("${tvmaze.api.base-url}")
+    private String baseUrl;
+
     public List<ShowSearchResponse> searchShows(String query) {
         List<ShowSearchResponse> resultList = new ArrayList<>();
         try {
-            String finalUrl = "https://api.tvmaze.com/search/shows?q=" + query;
+            String sanitizedQuery = query != null ? query.trim() : "";
+            String finalUrl = baseUrl + "/search/shows?q=" + sanitizedQuery;
+            System.out.println("--- INTENTANDO CONSUMIR API DE BÚSQUEDA URL: [" + finalUrl + "] ---");
+
             List<Map<String, Object>> response = restTemplate.getForObject(finalUrl, List.class);
 
             if (response != null) {
@@ -66,6 +73,7 @@ public class TvMazeService {
                 }
             }
         } catch (Exception e) {
+            System.err.println("--- ERROR EN LA BÚSQUEDA DE SHOWS ---");
             e.printStackTrace();
         }
         return resultList;
@@ -80,7 +88,7 @@ public class TvMazeService {
 
         try {
             System.out.println("--- Consumiendo API externa de TV Maze para ID: " + showId + " ---");
-            String url = "https://api.tvmaze.com/shows/" + showId; 
+            String url = baseUrl + "/shows/" + showId; 
             
             Map<String, Object> externalShow = restTemplate.getForObject(url, Map.class);
 
