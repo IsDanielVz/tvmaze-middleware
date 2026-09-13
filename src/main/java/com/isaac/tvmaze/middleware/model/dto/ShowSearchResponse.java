@@ -16,4 +16,15 @@ public class ShowSearchResponse {
     private String channel;
     private String summary;
     private List<String> genres;
+    private List<CommentDTO> comments;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CommentDTO {
+        private String comment;
+        private Integer rating;
+    }
 }
+

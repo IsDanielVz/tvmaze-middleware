@@ -1,6 +1,7 @@
 package com.isaac.tvmaze.middleware.service;
 
 import com.isaac.tvmaze.middleware.model.dto.ShowSearchResponse;
+import com.isaac.tvmaze.middleware.model.dto.ShowSearchResponse.CommentDTO;
 import com.isaac.tvmaze.middleware.model.entity.CachedShow;
 import com.isaac.tvmaze.middleware.model.entity.ShowComment;
 import com.isaac.tvmaze.middleware.repository.CachedShowRepository;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class TvMazeService {
@@ -34,8 +36,6 @@ public class TvMazeService {
         try {
             String sanitizedQuery = query != null ? query.trim() : "";
             String finalUrl = baseUrl + "/search/shows?q=" + sanitizedQuery;
-            System.out.println("--- INTENTANDO CONSUMIR API DE BÚSQUEDA URL: [" + finalUrl + "] ---");
-
             List<Map<String, Object>> response = restTemplate.getForObject(finalUrl, List.class);
 
             if (response != null) {
@@ -60,12 +60,24 @@ public class TvMazeService {
                             }
                         }
 
+                        List<CommentDTO> savedCommentsDTO = new ArrayList<>();
+                        if (id != null) {
+                            List<ShowComment> dbComments = showCommentRepository.findByShowId(id);
+                            savedCommentsDTO = dbComments.stream()
+                                    .map(c -> CommentDTO.builder()
+                                            .comment(c.getComment())
+                                            .rating(c.getRating())
+                                            .build())
+                                    .collect(Collectors.toList());
+                        }
+
                         ShowSearchResponse dto = ShowSearchResponse.builder()
                                 .id(id)
                                 .name(show.get("name") != null ? show.get("name").toString() : "No Name")
                                 .channel(channelName)
                                 .summary(show.get("summary") != null ? show.get("summary").toString() : "")
                                 .genres((List<String>) show.get("genres"))
+                                .comments(savedCommentsDTO)
                                 .build();
                         
                         resultList.add(dto);
@@ -73,12 +85,11 @@ public class TvMazeService {
                 }
             }
         } catch (Exception e) {
-            System.err.println("--- ERROR EN LA BÚSQUEDA DE SHOWS ---");
             e.printStackTrace();
         }
         return resultList;
     }
-    
+
     public Map<String, Object> getShowById(Long showId) {
         Optional<CachedShow> dbResult = cachedShowRepository.findById(showId);
         if (dbResult.isPresent()) {
@@ -104,21 +115,20 @@ public class TvMazeService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return null;
     }
 
     public ShowComment addComment(Long showId, String commentText, Integer rating) {
         if (rating == null || rating < 0 || rating > 5) {
-            throw new IllegalArgumentException("La calificación debe ser un número entero entre 0 y 5.");
+            throw new IllegalArgumentException("La calificación debe ser un entero entre 0 y 5.");
         }
 
-        ShowComment newComment = ShowComment.builder()
-            .showId(showId)
-            .comment(commentText != null ? commentText : "")
-            .rating(rating)
-            .build();
+        ShowComment commentEntity = ShowComment.builder()
+                .showId(showId)
+                .comment(commentText != null ? commentText.trim() : "")
+                .rating(rating)
+                .build();
 
-        return showCommentRepository.save(newComment);
+        return showCommentRepository.save(commentEntity);
     }
 }

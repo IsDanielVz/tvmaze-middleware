@@ -3,4 +3,4 @@ GET http://localhost:8080/api/shows/search?search_query=girls
 ### Obtener un show específico por ID con caché (Inciso B)
 GET http://localhost:8080/api/shows/300
 ### Crear un comentario y calificación (Punto C)
-POST http://localhost:8080/api/shows/comment?show_id=250&comment=Excelente serie de Disney XD&rating=5
+POST http://localhost:8080/api/shows/comment?show_id=300&comment=Excelente serie con buena trama&rating=5
